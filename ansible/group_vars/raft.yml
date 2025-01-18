@@ -1,0 +1,8 @@
+---
+
+raft_cluster_name: "raft_cluster_01"
+raft_members: "{{ groups['raft_cluster_01'] }}"
+#raft_cluster_type: new
+
+raft_restore: 0
+node_restore_from: etcd02

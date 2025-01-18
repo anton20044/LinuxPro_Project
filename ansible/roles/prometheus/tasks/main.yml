@@ -1,0 +1,247 @@
+---
+
+- name: Create group
+  ansible.builtin.group:
+    name: prometheus
+    state: present
+  tags:
+    - prometheus
+
+- name: Add user prometheus
+  ansible.builtin.user:
+    name: prometheus
+    group: prometheus
+    system: true
+    shell: /sbin/nologin
+    create_home: no
+  tags:
+    - prometheus
+
+- name: Create dir
+  file:
+    path: "{{ item }}"
+    owner: prometheus
+    group: prometheus
+    state: directory
+    mode: '0775'
+  loop:
+    - /etc/prometheus
+    - /var/lib/prometheus
+  tags:
+    - prometheus
+
+- name: Download prom
+  shell: wget https://github.com/prometheus/prometheus/releases/download/v{{ prom_ver }}/prometheus-{{ prom_ver }}.linux-amd64.tar.gz -P /root
+  tags:
+    - prometheus
+
+- name: Extract prom
+  shell: tar -xvf /root/prometheus-{{ prom_ver }}.linux-amd64.tar.gz -C /root
+  tags:
+    - prometheus
+
+- name: Copy bin prom
+  shell: mv /root/prometheus-{{ prom_ver }}.linux-amd64/prometheus /root/prometheus-{{ prom_ver }}.linux-amd64/promtool /usr/local/bin/
+  tags:
+    - prometheus
+
+- name: Create conf
+  template:
+    src: "{{ item.src }}"
+    dest: "{{ item.dst }}"
+    owner: prometheus
+    group: prometheus
+    mode: '0744'
+  loop:
+    - {src: prom_conf, dst: /etc/prometheus/prometheus.yml}
+  tags:
+    - prometheus
+
+- name: Create conf
+  copy:
+    src: "{{ item.src }}"
+    dest: "{{ item.dst }}"
+    owner: prometheus
+    group: prometheus
+    mode: '0744'
+  loop:
+    - {src: rules.yml, dst: /etc/prometheus/rules.yml}
+  tags:
+    - prometheus
+
+
+- name: Create unit
+  template:
+    src: prometheus
+    dest: /etc/systemd/system/prometheus.service
+    owner: root
+    group: root
+    mode: '0744'
+  tags:
+    - prometheus
+
+- name: Start prometheus
+  service:
+    name: prometheus.service
+    state: started
+    enabled: yes
+    daemon_reload: yes
+  tags:
+    - prometheus
+
+- name: Create group
+  ansible.builtin.group:
+    name: grafana
+    state: present
+  tags:
+    - grafana
+
+- name: Add user grafana
+  ansible.builtin.user:
+    name: grafana
+    group: grafana
+    system: true
+    shell: /sbin/nologin
+    create_home: no
+  tags:
+    - grafana
+
+- name: Download grafana
+  shell: wget https://dl.grafana.com/oss/release/grafana-11.4.0.linux-amd64.tar.gz -P /root
+  tags:
+    - grafana
+
+- name: Extract grafana
+  shell: tar -xvf /root/grafana-11.4.0.linux-amd64.tar.gz -C /root
+  tags:
+    - grafana
+
+- name: Copy grafana
+  shell: mv /root/grafana-v11.4.0/ /etc/grafana/
+  tags:
+    - grafana
+
+- name: Set permissions
+  file:
+    path: /etc/grafana
+    owner: grafana
+    group: grafana
+    state: directory
+    mode: '0775'
+  tags:
+    - grafana
+
+- name: Copy key
+  copy:
+    src: "{{ item.name }}"
+    dest: "{{ item.dest }}"
+    owner: grafana
+    group: grafana
+    mode: '0600'
+  loop:
+    - { name: grafana.crt, dest: /etc/grafana/grafana.crt }
+    - { name: grafana.key, dest: /etc/grafana/grafana.key }
+    - { name: grafana.ini, dest: /etc/grafana/conf/defaults.ini }
+  tags:
+    - grafana
+
+- name: Copy dashboards
+  copy:
+    src: "{{ item.name }}"
+    dest: "/etc/grafana/conf/provisioning/dashboards/{{ item.dest }}"
+    owner: grafana
+    group: grafana
+    mode: '0744'
+  loop:
+    - { name: node.json, dest: node_full.json}
+    - { name: pg.json, dest: postgres.json}
+    - { name: grafana_db_prov, dest: dashboards.yaml}
+  tags:
+    - grafana
+
+- name: Copy datasource
+  copy:
+    src: datasource.yml
+    dest: /etc/grafana/conf/provisioning/datasources/prometheus.yml
+    owner: grafana
+    group: grafana
+    mode: '0744'
+  tags:
+    - grafana
+
+- name: Create unit
+  template:
+    src: grafana
+    dest: /etc/systemd/system/grafana.service
+    owner: root
+    group: root
+    mode: '0744'
+  tags:
+    - grafana
+
+- name: Start grafana
+  service:
+    name: grafana.service
+    state: started
+    enabled: yes
+    daemon_reload: yes
+  tags:
+    - grafana
+
+
+- name: Download alertmanager
+  shell: wget https://github.com/prometheus/alertmanager/releases/download/v{{ alert_ver }}/alertmanager-{{ alert_ver }}.linux-amd64.tar.gz -P /root
+  tags:
+    - alertmanager
+
+- name: Extract alertmanager
+  shell: tar -xvf /root/alertmanager-{{ alert_ver }}.linux-amd64.tar.gz -C /root
+  tags:
+    - alertmanager
+
+- name: Copy bin alertmanager
+  shell: mv /root/alertmanager-{{ alert_ver }}.linux-amd64 /etc/alertmanager/
+  tags:
+    - alertmanager
+
+- name: Set permissions
+  file:
+    path: /etc/alertmanager
+    owner: prometheus
+    group: prometheus
+    state: directory
+    mode: '0775'
+  tags:
+    - alertmanager
+
+- name: Create configs
+  copy:
+    src: "{{ item.src }}"
+    dest: "{{ item.dst }}"
+    owner: prometheus
+    group: prometheus
+    mode: '0774'
+  loop:
+    - {src: alertmanager.yml,dst: /etc/alertmanager/alertmanager.yml}
+    - {src: telegram.tmpl,dst: /etc/alertmanager/telegram.tmpl}
+  tags:
+    - alertmanager
+
+- name: Create unit
+  template:
+    src: alertmanager
+    dest: /etc/systemd/system/alertmanager.service
+    owner: root
+    group: root
+    mode: '0744'
+  tags:
+    - alertmanager
+
+- name: Start alertmanager
+  service:
+    name: alertmanager.service
+    state: started
+    enabled: yes
+    daemon_reload: yes
+  tags:
+    - alertmanager

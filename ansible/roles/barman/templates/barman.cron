@@ -1,0 +1,1 @@
+21 * * * * barman /etc/barman.d/barman.shell.cron

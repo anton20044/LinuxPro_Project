@@ -1,0 +1,94 @@
+---
+- name: Update cache
+  apt:
+    update_cache: yes
+    cache_valid_time: 36000
+  tags:
+    - raft
+    - raft_restore
+
+- name: Install application
+  ansible.builtin.apt:
+    pkg:
+    - etcd
+    - sshpass
+  tags:
+    - raft
+    - raft_restore
+
+- name: Configure raft
+  tags:
+    - raft
+    - raft_deploy
+  block:
+    - name: Configure raft
+      template:
+        src: etcd.yml.j2
+        dest: /etc/default/etcd
+      when: raft_restore | int == 0
+
+    - name: Set cluster name
+      template:
+        src: raft_cluster.j2
+        dest: /etc/raft_cluster
+      when: raft_restore | int == 0
+
+    - name: Delete old directori
+      ansible.builtin.file:
+        state: absent
+        path: /var/lib/etcd/default/member
+      when: raft_restore | int == 0
+
+    - name: Restart etcd service
+      ansible.builtin.service:
+        name: etcd
+        state: restarted
+        enabled: true
+      when: raft_restore | int == 0
+
+
+
+####Восттановление ноды
+- name: Restore raft
+  tags:
+    - raft
+    - raft_restore
+  block:
+
+    - name: Get fail member name
+      shell: echo 'etcdctl member list | grep {{ inventory_hostname }} | cut -f1 -d''':''''
+      register: node_failure
+      when: (raft_restore | int == 1) and (vm_restore | int == 1)
+
+    - name: Del fail memberID
+      shell: "sshpass -p 'vagrant' ssh -o StrictHostKeyChecking=no  vagrant@{{ node_restore_from }}  'FNODE=`{{ node_failure.stdout_lines.0 }}` && etcdctl member remove $FNODE'"
+      when: (raft_restore | int == 1) and (vm_restore | int == 1)
+
+    - name: Get add member command
+      shell: "sshpass -p 'vagrant' ssh -o StrictHostKeyChecking=no  vagrant@{{ node_restore_from }} 'etcdctl member add {{ inventory_hostname }} http://{{ inventory_hostname }}:2380'"
+      when: (raft_restore | int == 1) and (vm_restore | int == 1)
+
+    - name: Configure raft
+      template:
+        src: etcd.yml.j2
+        dest: /etc/default/etcd
+      when: (raft_restore | int == 1) and (vm_restore | int == 1)
+
+    - name: Set cluster name
+      template:
+        src: raft_cluster.j2
+        dest: /etc/raft_cluster
+      when: (raft_restore | int == 1) and (vm_restore | int == 1)
+
+    - name: Delete old directori
+      ansible.builtin.file:
+        state: absent
+        path: /var/lib/etcd/default/member
+      when: (raft_restore | int == 1) and (vm_restore | int == 1)
+
+    - name: Restart etcd service
+      ansible.builtin.service:
+        name: etcd
+        state: restarted
+        enabled: true
+      when: (raft_restore | int == 1) and (vm_restore | int == 1)

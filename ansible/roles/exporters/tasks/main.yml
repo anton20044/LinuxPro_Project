@@ -1,0 +1,83 @@
+---
+- name: Create dir for node exporters
+  ansible.builtin.file:
+    path: /opt/node_exporter
+    owner: root
+    group: root
+    mode: '0744'
+    state: directory
+  tags:
+    - exporters
+
+- name: Download pack
+  shell: wget https://github.com/prometheus/node_exporter/releases/download/v{{ exporters_node }}/node_exporter-{{ exporters_node }}.linux-amd64.tar.gz -P /opt/node_exporter/
+  tags:
+    - exporters
+
+- name: Download pack
+  shell: tar -xvzf /opt/node_exporter/node_exporter-{{ exporters_node }}.linux-amd64.tar.gz -C /opt/node_exporter
+  tags:
+    - exporters
+
+- name: Create Unit
+  template:
+    src: node_exporter
+    dest: /etc/systemd/system/node_exporter.service
+    owner: root
+    group: root
+    mode: '0744'
+  tags:
+    - exporters
+
+- name: Start node_exporter.service
+  service:
+    name: node_exporter.service
+    state: started
+    enabled: yes
+    daemon_reload: yes
+  tags:
+    - exporters
+
+- name: Create dir for pg exporters
+  ansible.builtin.file:
+    path: /opt/postgres_exporter
+    owner: postgres
+    group: postgres
+    mode: '0744'
+    state: directory
+  when: "'postgresql' in group_names"
+  tags:
+    - exporters
+
+- name: Download pack
+  shell: wget https://github.com/prometheus-community/postgres_exporter/releases/download/v{{ exporters_pg }}/postgres_exporter-{{ exporters_pg }}.linux-amd64.tar.gz -P /opt/postgres_exporter
+  when: "'postgresql' in group_names"
+  tags:
+    - exporters
+
+- name: Download pack
+  shell: tar -xvzf /opt/postgres_exporter/postgres_exporter-{{ exporters_pg }}.linux-amd64.tar.gz -C /opt/postgres_exporter
+  when: "'postgresql' in group_names"
+  tags:
+    - exporters
+
+- name: Create Unit
+  template:
+    src: postgres_exporter
+    dest: /etc/systemd/system/postgres_exporter.service
+    owner: root
+    group: root
+    mode: '0744'
+  when: "'postgresql' in group_names"
+  tags:
+    - exporters
+
+- name: Start postgres_exporter.service
+  service:
+    name: postgres_exporter.service
+    state: started
+    enabled: yes
+    daemon_reload: yes
+  when: "'postgresql' in group_names"
+  tags:
+    - exporters

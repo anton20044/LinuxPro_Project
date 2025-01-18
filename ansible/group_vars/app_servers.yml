@@ -1,0 +1,4 @@
+---
+
+keep_vip: 192.168.56.60
+keep_interface: enp0s8

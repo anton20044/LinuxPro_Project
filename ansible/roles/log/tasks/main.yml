@@ -1,0 +1,209 @@
+---
+- name: add repo
+  ansible.builtin.apt_repository:
+    repo: deb [trusted=yes] https://mirror.yandex.ru/mirrors/elastic/8/ stable main
+    state: present
+  tags:
+    - elk
+    - raft
+
+- name: update
+  apt:
+    update_cache=yes cache_valid_time=3600
+  tags:
+    - elk
+    - raft
+
+- name: install elastic
+  ansible.builtin.apt:
+    pkg:
+    - elasticsearch
+    - logstash
+    - kibana
+  when: "'log_servers' in group_names"
+  tags:
+    - elk
+
+- name: install filebeat
+  ansible.builtin.apt:
+    pkg:
+    - filebeat
+  when: "'log_servers' not in group_names"
+  tags:
+    - elk
+    - raft
+
+- name: copy conf filebeat
+  template:
+    src: filebeat.yml
+    dest: /etc/filebeat/filebeat.yml
+  when: "'log_servers' not in group_names"
+  tags:
+    - elk
+    - raft
+
+- name: copy conf logstash
+  copy:
+    src: "{{ item.src }}"
+    dest: "/etc/logstash/conf.d/{{ item.dst }}"
+  loop:
+    - { src: filter.conf,dst: filter.conf }
+    - { src: input.conf,dst: input.conf }
+  when: "'log_servers' in group_names"
+  tags:
+    - elk
+
+- name: clear default conf logstash
+  shell: echo "" > /etc/logstash/logstash-sample.conf
+  when: "'log_servers' in group_names"
+  tags:
+    - elk
+
+- name: Add option jvm
+  lineinfile:
+    path: "/etc/elasticsearch/jvm.options"
+    line: '-Xmx1g'
+  when: "'log_servers' in group_names"
+  tags:
+    - elk
+
+- name: Add option jvm
+  lineinfile:
+    path: "/etc/elasticsearch/jvm.options"
+    line: '-Xms1g'
+  when: "'log_servers' in group_names"
+  tags:
+    - elk
+
+- name: copy conf elastic
+  template:
+    src: elasticsearch.yml
+    dest: /etc/elasticsearch/elasticsearch.yml
+    owner: root
+    group: elasticsearch
+    mode: 0660
+  when: "'log_servers' in group_names"
+  tags:
+    - elk
+
+- name: copy cert for elastic
+  copy:
+    src: "{{ item.src }}"
+    dest: "/etc/elasticsearch/certs/{{ item.dst }}"
+    owner: root
+    group: elasticsearch
+    mode: 0660
+  loop:
+    - { src: cert.pem,dst: cert.pem }
+    - { src: cert.key,dst: cert.key }
+  when: "'log_servers' in group_names"
+  tags:
+    - elk
+
+- name: restart elasticsearch.service
+  service:
+    name: "{{ item }}"
+    state: restarted
+    enabled: true
+  when: "'log_servers' in group_names"
+  loop:
+    - elasticsearch.service
+  tags:
+    - elk
+
+- name: get elastic pass
+  shell: echo 'y' | /usr/share/elasticsearch/bin/elasticsearch-reset-password -u elastic -s --url https://{{ inventory_hostname }}.home.local:9200
+  register: elastic_passwd
+  when: "'log_servers' in group_names"
+  tags:
+    - elk
+
+- name: get kibana pass
+  shell: echo 'y' | /usr/share/elasticsearch/bin/elasticsearch-reset-password -u kibana -s --url https://{{ inventory_hostname }}.home.local:9200
+  register: kibana_passwd
+  when: "'log_servers' in group_names"
+  tags:
+    - elk
+
+- name: copy conf logstash
+  template:
+    src: output.conf
+    dest: /etc/logstash/conf.d/output.conf
+  when: "'log_servers' in group_names"
+  tags:
+    - elk
+
+- name: copy cert for kibana
+  copy:
+    src: "{{ item.src }}"
+    dest: "/etc/kibana/{{ item.dst }}"
+    owner: root
+    group: kibana
+    mode: 0660
+  loop:
+    - { src: cert.pem,dst: cert.pem }
+    - { src: cert.key,dst: cert.key }
+  when: "'log_servers' in group_names"
+  tags:
+    - elk
+
+- name: copy cert for kibana
+  template:
+    src: "{{ item.src }}"
+    dest: "/etc/kibana/{{ item.dst }}"
+    owner: root
+    group: kibana
+    mode: 0660
+  loop:
+    - { src: kibana.yml,dst: kibana.yml }
+  when: "'log_servers' in group_names"
+  tags:
+    - elk
+
+- name: restart service
+  service:
+    name: "{{ item }}"
+    state: restarted
+    enabled: true
+  when: "'log_servers' in group_names"
+  loop:
+    - logstash.service
+    - kibana.service
+  tags:
+    - elk
+
+- name: enable module filebeat for postgresql
+  shell: filebeat modules enable postgresql
+  when: "'postgresql' in group_names"
+  tags:
+    - elk
+
+- name: enable module postgresql
+  replace:
+    path: "/etc/filebeat/modules.d/postgresql.yml"
+    regexp: 'enabled: false'
+    replace: 'enabled: true'
+  when: "'postgresql' in group_names"
+  tags:
+    - elk
+
+- name: add log postgresql
+  ansible.builtin.lineinfile:
+    path: "/etc/filebeat/modules.d/postgresql.yml"
+    insertafter: 'enabled: true'
+    line: '    var.paths: ["/var/log/postgresql/postgresql*.log*"]'
+  when: "'postgresql' in group_names"
+  tags:
+    - elk
+
+- name: restart service
+  service:
+    name: "{{ item }}"
+    state: restarted
+  when: "'log_servers' not in group_names"
+  loop:
+    - filebeat.service
+  tags:
+    - elk
+    - raft
+

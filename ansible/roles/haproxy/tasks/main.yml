@@ -1,0 +1,82 @@
+---
+
+- name: update cache
+  apt:
+    update_cache: yes
+    cache_valid_time: 3600
+  tags:
+    - haproxy
+  when: "'haproxy' in group_names"
+
+- name: install application
+  ansible.builtin.apt:
+    pkg:
+    - haproxy
+    - keepalived
+  tags:
+    - haproxy
+  when: "'haproxy' in group_names"
+
+- name: copy haproxy config
+  template:
+    src: haproxy.cfg.j2
+    dest: /etc/haproxy/haproxy.cfg
+    owner: haproxy
+    group: haproxy
+    mode: 0644
+  when: "'haproxy' in group_names"
+  tags:
+    - haproxy
+
+- name: create crt dir
+  file:
+    path: /etc/haproxy/crt
+    owner: haproxy
+    group: haproxy
+    mode: '0744'
+    state: directory
+  when: "'haproxy' in group_names"
+  tags:
+    - haproxy
+
+- name: copy cert
+  copy:
+    src: "{{ item }}"
+    dest: "/etc/haproxy/crt/{{ item }}"
+    owner: haproxy
+    group: haproxy
+    mode: 0640
+  loop:
+    - clusterdb.pem
+  tags:
+    - haproxy
+  when: "'haproxy' in group_names"
+
+- name: restart haproxy
+  ansible.builtin.service:
+    name: haproxy
+    state: restarted
+    enabled: true
+  when: "'haproxy' in group_names"
+  tags:
+    - haproxy
+
+- name: copy keepalived config
+  template:
+    src: keepalived.conf.j2
+    dest: /etc/keepalived/keepalived.conf
+    owner: root
+    group: root
+    mode: 0644
+  when: "'haproxy' in group_names"
+  tags:
+    - haproxy
+
+- name: start keepalived
+  ansible.builtin.service:
+    name: keepalived
+    state: started
+    enabled: true
+  when: "'haproxy' in group_names"
+  tags:
+    - haproxy

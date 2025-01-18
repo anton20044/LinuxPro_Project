@@ -1,0 +1,4 @@
+---
+postgresql_members: "{{ groups['postgresql_cluster_01'] }}"
+keep_vip: 192.168.56.50
+keep_interface: enp0s8

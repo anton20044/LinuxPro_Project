@@ -1,0 +1,19 @@
+*filter
+:INPUT ACCEPT [0:0]
+:FORWARD ACCEPT [0:0]
+:OUTPUT ACCEPT [0:0]
+-A INPUT -i enp0s16 -m state --state RELATED,ESTABLISHED -j ACCEPT
+-A INPUT -i enp0s16 -m state --state RELATED,ESTABLISHED -j ACCEPT
+#-A INPUT -i enp0s16 -j DROP
+-A INPUT -i enp0s9 -p tcp -m tcp --dport 443 -j ACCEPT
+#-A INPUT -i enp0s9 -j DROP
+COMMIT
+*nat
+:PREROUTING ACCEPT [0:0]
+:INPUT ACCEPT [0:0]
+:OUTPUT ACCEPT [0:0]
+:POSTROUTING ACCEPT [0:0]
+-A PREROUTING -p tcp -m tcp --dport 443 -j DNAT --to-destination 192.168.56.60:443
+-A POSTROUTING -d 192.168.56.60/32 -p tcp -m tcp --dport 443 -j SNAT --to-source 192.168.50.240
+-A POSTROUTING -o enp0s3 -j MASQUERADE
+COMMIT

@@ -1,0 +1,40 @@
+[raft:children]
+raft_cluster_01
+
+[raft_cluster_01]
+etcd01 ansible_host=192.168.57.2 ansible_user=vagrant ansible_ssh_private_key_file=./.vagrant/machines/etcd01/virtualbox/private_key
+etcd02 ansible_host=192.168.57.3 ansible_user=vagrant ansible_ssh_private_key_file=./.vagrant/machines/etcd02/virtualbox/private_key
+etcd03 ansible_host=192.168.57.4 ansible_user=vagrant ansible_ssh_private_key_file=./.vagrant/machines/etcd03/virtualbox/private_key
+
+[dns]
+dns01 ansible_host=192.168.57.11 ansible_user=vagrant ansible_ssh_private_key_file=./.vagrant/machines/dns01/virtualbox/private_key
+dns02 ansible_host=192.168.57.12 ansible_user=vagrant ansible_ssh_private_key_file=./.vagrant/machines/dns02/virtualbox/private_key
+
+[haproxy]
+hp01 ansible_host=192.168.57.7 ansible_user=vagrant ansible_ssh_private_key_file=./.vagrant/machines/hp01/virtualbox/private_key
+hp02 ansible_host=192.168.57.8 ansible_user=vagrant ansible_ssh_private_key_file=./.vagrant/machines/hp02/virtualbox/private_key
+
+[postgresql:children]
+postgresql_cluster_01
+
+[postgresql_cluster_01]
+pg01 ansible_host=192.168.57.9  ansible_user=vagrant ansible_ssh_private_key_file=./.vagrant/machines/pg01/virtualbox/private_key
+pg02 ansible_host=192.168.57.10 ansible_user=vagrant ansible_ssh_private_key_file=./.vagrant/machines/pg02/virtualbox/private_key
+
+[backup_servers]
+backup ansible_host=192.168.57.5 ansible_user=vagrant ansible_ssh_private_key_file=./.vagrant/machines/backup/virtualbox/private_key
+
+[monitor_servers]
+monitor ansible_host=192.168.57.6 ansible_user=vagrant ansible_ssh_private_key_file=./.vagrant/machines/monitor/virtualbox/private_key
+
+[log_servers]
+log01 ansible_host=192.168.57.13 ansible_user=vagrant ansible_ssh_private_key_file=./.vagrant/machines/log01/virtualbox/private_key
+
+[app_servers]
+app01 ansible_host=192.168.57.14 ansible_user=vagrant ansible_ssh_private_key_file=./.vagrant/machines/app01/virtualbox/private_key
+app02 ansible_host=192.168.57.15 ansible_user=vagrant ansible_ssh_private_key_file=./.vagrant/machines/app02/virtualbox/private_key
+
+[routers]
+router01 ansible_host=192.168.57.21  ansible_user=vagrant ansible_ssh_private_key_file=./.vagrant/machines/router01/virtualbox/private_key 
+router02 ansible_host=192.168.57.22 ansible_user=vagrant ansible_ssh_private_key_file=./.vagrant/machines/router02/virtualbox/private_key 
+

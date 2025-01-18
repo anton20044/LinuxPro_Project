@@ -1,0 +1,163 @@
+---
+
+- name: Add repo key
+  apt_key:
+    url: https://www.postgresql.org/media/keys/ACCC4CF8.asc
+    state: present
+  when: "'backup_servers' in group_names"
+  tags:
+    - barman
+
+- name: Add mirror repo
+  apt_repository:
+    repo: deb http://apt.postgresql.org/pub/repos/apt {{ ansible_distribution_release }}-pgdg main
+    state: present
+  when: "'backup_servers' in group_names"
+  tags:
+    - barman
+
+- name: Update cache
+  apt:
+    update_cache: yes
+    cache_valid_time: 3600
+  when: "'backup_servers' in group_names"
+  tags:
+    - barman
+
+- name: Install barman
+  apt:
+    name: "{{ item.name }}"
+    state: present
+  loop:
+    - { name: traceroute }
+    - { name: python3-psycopg2 }
+    - { name: sshpass }
+    - { name: barman-cli }
+    - { name: "postgresql-{{ pg_ver }}" }
+    - { name: barman }
+  when: "'backup_servers' in group_names"
+  tags:
+    - barman
+
+- name: Copy cron barman
+  template:
+    src: barman.cron
+    dest: /etc/cron.d/barman.cron
+    owner: root
+    group: root
+    mode: '0744'
+  when: "'backup_servers' in group_names"
+  tags:
+    - barman
+
+- name: Copy file barman conf
+  template:
+    src: barman.conf
+    dest: /etc/barman.conf
+    owner: root
+    group: root
+    mode: '0644'
+  when: "'backup_servers' in group_names"
+  tags:
+    - barman
+
+- name: Create dir
+  ansible.builtin.file:
+    path: /var/lib/barman/.ssh
+    owner: barman
+    group: barman
+    mode: '0700'
+    state: directory
+  when: "'backup_servers' in group_names"
+  tags:
+    - barman
+
+- name: Copy private key
+  copy:
+    src: id_rsa
+    dest: /var/lib/barman/.ssh/id_rsa
+    owner: barman
+    group: barman
+    mode: '0600'
+  when: "'backup_servers' in group_names"
+  tags:
+    - barman
+
+- name: Copy pub key
+  copy:
+    src: id_rsa.pub
+    dest: /var/lib/postgresql/.ssh/authorized_keys
+    owner: postgres
+    group: postgres
+    mode: '0644'
+  when: "'postgresql' in group_names"
+  tags:
+    - barman
+
+- name: Add pg pass
+  template:
+    src: pgpass
+    dest: /var/lib/barman/.pgpass
+    owner: barman
+    group: barman
+    mode: '0600'
+  when: "'backup_servers' in group_names"
+  tags:
+    - barman
+
+- name: Copy file barman pg conf
+  template:
+    src: node.conf
+    dest: /etc/barman.d/node1.conf
+    owner: root
+    group: root
+    mode: '0644'
+  when: "'backup_servers' in group_names"
+  tags:
+    - barman
+
+- name: Restart cron
+  service:
+    name: cron
+    state: restarted
+  when: "'backup_servers' in group_names"
+  tags:
+    - barman
+
+- name: Copy barman shell cron
+  template:
+    src: barman.shell.cron
+    dest: /etc/barman.d/barman.shell.cron
+    owner: barman
+    group: barman
+    mode: '0744'
+  when: "'backup_servers' in group_names"
+  tags:
+    - barman
+
+- name: barman pause
+  become: true
+  become_user: barman
+  shell: sleep 60
+  when: "'backup_servers' in group_names"
+  tags:
+    - barman
+
+- name: barman switch-wal pg
+  become: true
+  become_user: barman
+  shell: barman switch-wal pg
+  when: "'backup_servers' in group_names"
+  tags:
+    - barman
+
+- name: barman cron
+  become: true
+  become_user: barman
+  shell: barman cron
+  when: "'backup_servers' in group_names"
+  tags:
+    - barman
+
+
+

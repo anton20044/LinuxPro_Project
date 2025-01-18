@@ -1,0 +1,5 @@
+---
+
+patroni_scope: cluster
+patroni_raft_cluster: "{{ groups['raft_cluster_01'] }}"
+pg_cluster: "{{ groups['postgresql_cluster_01'] }}"

@@ -1,0 +1,6 @@
+#!/bin/bash
+{% for key in backup_pg_cluster %}
+{% if loop.first %}
+barman backup {{ key }}
+{% endif %}
+{% endfor %}

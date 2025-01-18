@@ -1,0 +1,5 @@
+---
+backup_pg_cluster: "{{ groups['postgresql_cluster_01'] }}"
+
+#postgresql_vip: 192.168.56.50
+

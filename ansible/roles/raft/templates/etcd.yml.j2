@@ -1,0 +1,17 @@
+# MANAGED ANSIBLE
+
+ETCD_NAME="{{ inventory_hostname }}"
+ETCD_DATA_DIR="/var/lib/etcd/default"
+
+ETCD_LISTEN_PEER_URLS="http://0.0.0.0:2380"
+ETCD_LISTEN_CLIENT_URLS="http://0.0.0.0:2379"
+
+{% if raft_restore %}
+ETCD_INITIAL_CLUSTER_STATE=existing
+{% else %}
+ETCD_INITIAL_CLUSTER_STATE=new
+{% endif %}
+ETCD_INITIAL_CLUSTER="{% for key in raft_members %}{{ key }}=http://{{ key }}:2380{% if not loop.last %},{% endif %}{% endfor %}"
+
+ETCD_INITIAL_ADVERTISE_PEER_URLS="http://{{ inventory_hostname }}:2380"
+ETCD_ADVERTISE_CLIENT_URLS="http://{{ inventory_hostname }}:2379"

@@ -1,0 +1,52 @@
+---
+
+- hosts: routers
+  become: yes
+  roles:
+    - router
+
+- hosts: all
+  become: yes
+  roles:
+    - time
+    - dns
+
+- hosts: raft
+  become: yes
+  roles:
+    - raft
+
+- hosts: postgresql
+  become: yes
+  roles:
+    - pgsql
+
+- hosts: all
+  become: yes
+  roles:
+    - haproxy
+    - barman
+    - exporters
+    - log
+
+- hosts: monitor_servers
+  become: yes
+  roles:
+    - prometheus
+
+- hosts: app_servers
+  become: yes
+  roles:
+    - app
+
+- hosts: all
+  become: yes
+  roles:
+    - network
+
+- hosts: app_servers
+  become: yes
+  roles:
+    - test_data_load
+
+

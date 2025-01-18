@@ -1,0 +1,8 @@
+[Unit]
+Description=Node Exporter
+ 
+[Service]
+ExecStart=/opt/node_exporter/node_exporter-{{ exporters_node }}.linux-amd64/node_exporter
+ 
+[Install]
+WantedBy=default.target

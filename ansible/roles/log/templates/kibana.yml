@@ -1,0 +1,24 @@
+server.port: 5601
+server.host: "0.0.0.0"
+server.name: "{{ inventory_hostname }}"
+server.ssl.enabled: true
+server.ssl.certificate: /etc/kibana/cert.pem
+server.ssl.key: /etc/kibana/cert.key
+elasticsearch.username: "kibana"
+elasticsearch.password: "{{ kibana_passwd['stdout'] }}"
+elasticsearch.hosts: ["https://{{ inventory_hostname }}.home.local:9200"]
+elasticsearch.ssl.certificate: /etc/kibana/cert.pem
+elasticsearch.ssl.key: /etc/kibana/cert.key
+elasticsearch.ssl.certificateAuthorities: [ "/etc/kibana/cert.pem" ]
+logging:
+  appenders:
+    file:
+      type: file
+      fileName: /var/log/kibana/kibana.log
+      layout:
+        type: json
+  root:
+    appenders:
+      - default
+      - file
+pid.file: /run/kibana/kibana.pid

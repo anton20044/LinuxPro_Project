@@ -1,0 +1,25 @@
+#cluster.name: my-application
+node.name: {{ inventory_hostname }}
+path.data: /var/lib/elasticsearch
+path.logs: /var/log/elasticsearch
+xpack.security.enabled: true
+
+xpack.security.enrollment.enabled: true
+# Enable encryption for HTTP API client connections, such as Kibana, Logstash, and Agents
+xpack.security.http.ssl:
+  enabled: true
+  key: certs/cert.key
+  certificate_authorities: certs/cert.pem
+  certificate: certs/cert.pem
+  verification_mode: certificate
+
+# Enable encryption and mutual authentication between cluster nodes
+xpack.security.transport.ssl:
+  enabled: false
+  verification_mode: certificate
+cluster.initial_master_nodes: ["{{ inventory_hostname }}"]
+
+# Allow HTTP API connections from anywhere
+# Connections are encrypted and require user authentication
+http.host: {{ log_ip }}
+http.port: 9200

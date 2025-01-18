@@ -1,0 +1,38 @@
+$TTL 3600
+$ORIGIN home.local.
+@               IN      SOA     dns01.home.local. root.home.local. (
+                            2711201008 ; serial
+                            3600       ; refresh (1 hour)
+                            600        ; retry (10 minutes)
+                            86400      ; expire (1 day)
+                            600        ; minimum (10 minutes)
+                        )
+
+                IN      NS      dns01.home.local.
+                IN      NS      dns02.home.local.
+
+; DNS Servers
+dns01           IN      A       192.168.56.11
+dns02		IN	A	192.168.56.12
+
+;etcd
+etcd01             IN      A       192.168.56.2
+etcd02             IN      A       192.168.56.3
+etcd03             IN      A       192.168.56.4
+;PostgreSQL
+pg01		   IN	   A	   192.168.56.9
+pg02		   IN      A       192.168.56.10
+;Barman
+backup             IN      A       192.168.56.5
+;HaProxy
+hp01		   IN	   A	   192.168.56.7
+hp02		   IN	   A	   192.168.56.8
+cluster-db	   IN	   A	   192.168.56.50
+;Prometheus
+monitor		   IN	   A	   192.168.56.6
+log01		   IN	   A	   192.168.56.13
+router01	   IN	   A	   192.168.56.21
+router02	   IN      A	   192.168.56.22
+lb		   IN      A	   192.168.56.60
+app01		   IN      A	   192.168.56.14
+app02		   IN	   A	   192.168.56.15

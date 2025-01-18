@@ -1,0 +1,45 @@
+---
+
+- name: Insert data into accpList
+  community.postgresql.postgresql_query:
+    db: "{{ app_db }}"
+    login_host: "cluster-db.home.local"
+    port: 5000
+    login_user: "{{ app_user }}"
+    login_password: "{{ app_passwd }}"
+    query: "insert into payments_accplist (accp, first_name, last_name) values ('{{ item.accp }}','{{ item.first_name }}','{{ item.last_name }}');"
+  loop:
+    - { accp: 1111, first_name: "Иванов", last_name: "Иван" }
+    - { accp: 2222, first_name: "Петров", last_name: "Степан" }
+    - { accp: 3333, first_name: "Сидоров", last_name: "Виктор" }
+    - { accp: 4444, first_name: "Кузнецов", last_name: "Денис" }
+    - { accp: 5555, first_name: "Попов", last_name: "Михаил" }
+    - { accp: 6666, first_name: "Васильев", last_name: "Андрей" }
+    - { accp: 7777, first_name: "Соколов", last_name: "Анатолий" }
+    - { accp: 8888, first_name: "Михайлов", last_name: "Вадим" }
+    - { accp: 9999, first_name: "Смирнов", last_name: "Константин" }
+  when: load_test_data | int == 1
+  tags:
+    - test_data
+
+- name: Insert data into accpSaldo
+  community.postgresql.postgresql_query:
+    db: "{{ app_db }}"
+    login_host: "cluster-db.home.local"
+    port: 5000
+    login_user: "{{ app_user }}"
+    login_password: "{{ app_passwd }}"
+    query: "insert into payments_accpsaldo (accp, date, summ) values ('{{ item.accp }}','{{ item.date }}','{{ item.summ }}');"
+  loop:
+    - { accp: 1111, date: "20250101", summ: "100.01" }
+    - { accp: 2222, date: "20250102", summ: "512.12" }
+    - { accp: 3333, date: "20250103", summ: "11214.55" }
+    - { accp: 4444, date: "20250104", summ: "44.12" }
+    - { accp: 5555, date: "20250105", summ: "100.00" }
+    - { accp: 6666, date: "20250106", summ: "456.90" }
+    - { accp: 7777, date: "20250107", summ: "134.55" }
+    - { accp: 8888, date: "20250108", summ: "44.88" }
+    - { accp: 9999, date: "20250109", summ: "99.66" }
+  when: load_test_data | int == 1
+  tags:
+    - test_data

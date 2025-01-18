@@ -1,0 +1,4 @@
+{% for key in backup_pg_cluster | sort %}
+{{ key }}:5432:postgres:barman:barman
+{{ key }}:5432:replication:barman:barman
+{% endfor %}

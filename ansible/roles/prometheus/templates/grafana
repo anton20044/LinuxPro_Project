@@ -1,0 +1,14 @@
+[Unit]
+Description=Prometheus
+Wants=network-online.target
+After=network-online.target
+
+[Service]
+User=grafana
+Group=grafana
+Restart=always
+Type=simple
+ExecStart=/etc/grafana/bin/grafana-server --homepath /etc/grafana
+
+[Install]
+WantedBy=multi-user.target

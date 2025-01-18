@@ -1,0 +1,10 @@
+[Unit]
+Description=Unit for starting a basic Django app 
+
+[Service]
+Restart=on-failure
+WorkingDirectory=/opt/payments
+ExecStart=python3 /opt/payments/manage.py runsslserver 0.0.0.0:443 --certificate cert.crt --key cert.key
+
+[Install]
+WantedBy=multi-user.target

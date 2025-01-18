@@ -1,0 +1,13 @@
+[Unit]
+Description=Prometheus PostgreSQL Exporter
+After=network.target
+
+[Service]
+Type=simple
+Restart=always
+User=postgres
+Group=postgres
+Environment=DATA_SOURCE_NAME=postgresql://monitor:monitor@{{ inventory_hostname }}/postgres?sslmode=disable
+ExecStart=/opt/postgres_exporter/postgres_exporter-{{ exporters_pg }}.linux-amd64/postgres_exporter
+[Install]
+WantedBy=multi-user.target

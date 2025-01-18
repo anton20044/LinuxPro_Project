@@ -1,0 +1,198 @@
+---
+
+- name: Add repo key
+  apt_key:
+    url: https://www.postgresql.org/media/keys/ACCC4CF8.asc
+    state: present
+  tags:
+    - postgresql
+
+- name: Add mirror repo
+  apt_repository:
+    repo: deb http://apt.postgresql.org/pub/repos/apt {{ ansible_distribution_release }}-pgdg ma>
+    state: present
+  tags:
+    - postgresql
+
+- name: Update cache
+  apt:
+    update_cache: yes
+    cache_valid_time: 3600
+  tags:
+    - app
+
+- name: Install software on Ubuntu
+  apt:
+    name: "{{ item.name }}"
+    state: present
+  loop:
+    - { name: python3 }
+    - { name: python3-pip }
+    - { name: python3-psycopg2 }
+    - { name: keepalived }
+    - { name: postgresql-client }
+  tags:
+    - app
+
+- name: Install soft from pip
+  ansible.builtin.pip:
+    name: "{{ item.name }}"
+    state: present
+  loop:
+    - { name: django }
+    - { name: djangorestframework }
+    - { name: django-sslserver }
+  tags:
+    - app
+
+- name: Create dir for server
+  file:
+    path: /opt/payments
+    state: directory
+    mode: '0755'
+  tags:
+    - app
+
+- name: Copy certs
+  copy:
+     src: "{{ item }}"
+     dest: "/opt/payments/{{ item }}"
+     mode: 0644
+  loop:
+    - cert.crt
+    - cert.key
+  tags:
+    - app
+
+- name: Copy project
+  copy:
+     src: "{{ item }}"
+     dest: "/opt/payments/{{ item }}"
+  loop:
+    - app/
+    - manage.py
+    - payments/
+  tags:
+    - app
+
+- name: Copy unit
+  template:
+    src: app
+    dest: /etc/systemd/system/app.service
+    owner: root
+    group: root
+    mode: '0744'
+  tags:
+    - app
+
+- name: Run server
+  service:
+    name: app
+    state: started
+    enabled: yes
+  tags:
+    - app
+
+- name: Copy keepalived config
+  template:
+    src: keepalived.conf.j2
+    dest: /etc/keepalived/keepalived.conf
+    owner: root
+    group: root
+    mode: 0644
+  tags:
+    - app
+
+- name: Start keepalived
+  ansible.builtin.service:
+    name: keepalived
+    state: started
+    enabled: true
+  tags:
+    - app
+
+- name: Make migrations
+  shell: python3 /opt/payments/manage.py migrate auth
+  when: app_make_migr | int == 1
+  tags:
+    - app
+    - migration
+
+- name: Make migrations
+  shell: python3 /opt/payments/manage.py makemigrations payments
+  when: app_make_migr | int == 1
+  tags:
+    - app
+    - migration
+
+- name: Migrations
+  shell: python3 /opt/payments/manage.py migrate payments
+  when: app_make_migr | int == 1
+  tags:
+    - app
+    - migration
+
+- name: Run server
+  service:
+    name: app
+    state: restarted
+  tags:
+    - app
+    - migration
+
+- name: Create superuser
+  shell: "{{ item }}"
+  loop:
+    - "export DJANGO_SUPERUSER_PASSWORD=root"
+    - "export DJANGO_SUPERUSER_USERNAME=SuperAdmin123!"
+    - "export DJANGO_SUPERUSER_EMAIL=''"
+    - "python3 /opt/payments/manage.py createsuperuser --noinput --username root --email \"\""
+    - "export DJANGO_SUPERUSER_PASSWORD=bank1"
+    - "export DJANGO_SUPERUSER_USERNAME=QazwsxedC12345678"
+    - "export DJANGO_SUPERUSER_EMAIL=''"
+    - "python3 /opt/payments/manage.py createsuperuser --noinput --username bank --email \"\""
+  when: app_make_migr | int == 1
+  tags:
+    - app
+    - migration
+
+- name: Migrations users
+  shell: python3 /opt/payments/manage.py migrate
+  when: app_make_migr | int == 1
+  tags:
+    - app
+    - migration
+
+- name: Change pass root
+  community.postgresql.postgresql_query:
+    db: "{{ app_db }}"
+    login_host: "cluster-db.home.local"
+    port: 5000
+    login_user: app
+    login_password: "{{ app_passwd }}"
+    query: update auth_user set password = %s where username = %s
+    positional_args:
+    - 'pbkdf2_sha256$870000$qs747C0Z4u2Auz6H0m2PLr$5uSsrSSCU54dWFtLDTav+e12Xw172JE0K04GVYNGlUo='
+    - 'root'
+  when: app_make_migr | int == 1
+  tags:
+    - app
+    - migration
+    - pass
+
+- name: Change pass bank1
+  community.postgresql.postgresql_query:
+    db: "{{ app_db }}"
+    login_host: "cluster-db.home.local"
+    port: 5000
+    login_user: app
+    login_password: "{{ app_passwd }}"
+    query: update auth_user set password = %s where username = %s
+    positional_args:
+    - 'pbkdf2_sha256$870000$e8p4gZ3FQb8QupRCss8QWB$9vvxrtEmleiz8WMtzzTbBzRzarVuwvk2Zx/7eg3C2tQ='
+    - 'bank1'
+  when: app_make_migr | int == 1
+  tags:
+    - app
+    - migration
+    - pass
