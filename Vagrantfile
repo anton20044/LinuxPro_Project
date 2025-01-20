@@ -75,8 +75,8 @@ MACHINES = {
   :monitor => {
         :box_name => "jammy",
         :vm_name => "monitor",
-	:cpus => 1,
-        :memory => 756,
+	:cpus => 2,
+        :memory => 2048,
         :net => [
                    ["192.168.56.6", 2, "255.255.255.0", "net1"],
                    ["192.168.57.6", 3],
