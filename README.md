@@ -22,7 +22,7 @@
 
   - vagrant destroy -f [name_vm]
   - vagrant up [name_vm]
-  - ansible-playbook -i ansible/hosts ansible/playbook -l [name_vm]
+  - ansible-playbook -i ansible/hosts ansible/playbook.yml -l [name_vm]
 ```
 
 ### Восстановления ноды ETCD:
@@ -32,22 +32,22 @@
   - Указать 1 для переменной vm_restore,  это переменная хоста и для хоста etcd03 она хранится в файле ansible/host_vars/etcd03.yml
   - vagrant destroy -f [name_vm]
   - vagrant up [name_vm]
-  - ansible-playbook -i ansible/hosts ansible/playbook -l [name_vm]
+  - ansible-playbook -i ansible/hosts ansible/playbook.yml -l [name_vm]
 ИЛИ
-  - ansible-playbook -i ansible/hosts ansible/playbook -l [name_vm] -e raft_restore=1 -e node_restore_from=etcd01 -e vm_restore=1
+  - ansible-playbook -i ansible/hosts ansible/playbook.yml -l [name_vm] -e raft_restore=1 -e node_restore_from=etcd01 -e vm_restore=1
 ```
 ### Восстановления ноды сервера приложений
 ```
  - Выставить значение переменной app_make_migr в 0, в файле ansible/host_vars/app01.yml
  - Выставить значение переменной load_test_data в 0, в файле ansible/host_vars/app01.yml
- - ansible-playbook -i ansible/hosts ansible/playbook -l [name_vm]
+ - ansible-playbook -i ansible/hosts ansible/playbook.yml -l [name_vm]
 ИЛИ
-  - ansible-playbook -i ansible/hosts ansible/playbook -l [name_vm] -e app_make_migr=0 -e load_test_data=0
+  - ansible-playbook -i ansible/hosts ansible/playbook.yml -l [name_vm] -e app_make_migr=0 -e load_test_data=0
 ```
 Восстановление ноды кластера СУБД
 ```
   - Выставить значение переменной pg_state в replica, в файле ansible/host_vars/pg01.yml
-  - ansible-playbook -i ansible/hosts ansible/playbook -l [name_vm]
+  - ansible-playbook -i ansible/hosts ansible/playbook.yml -l [name_vm]
 ИЛИ
-  - ansible-playbook -i ansible/hosts ansible/playbook -l [name_vm] -e pg_state=replica
+  - ansible-playbook -i ansible/hosts ansible/playbook.yml -l [name_vm] -e pg_state=replica
 ``` 
